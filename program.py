@@ -8,7 +8,7 @@ class Database:
         self.films.remove(movie_obj)
     def display_movies(self):
         for i in range(len(self.films)):
-            print(f"{self.films[i]}\n")
+            print(f"{i} {self.films[i]}\n")
     def search_movie(self):
         # write code here...
         pass
@@ -22,7 +22,6 @@ class Film:
         self.reviews = [] # if no rating has been added, the movie will show 0/10... fix this later
         self.ratings = 0
         self.avg_rating = 0 # review later
-        # self.index = 0
     def __str__(self):
         return f"{self.name} ({self.year}) - {self.genre} - {self.age_rating} - {self.avg_rating}/10"
 
@@ -47,38 +46,34 @@ class User:
 
 movie_hub = Database()
 starwars = Film("Star Wars: A New Hope", "PG", "Sci-Fi", 1977)
-godfather = Film("The Godfather", "R", "Crime", 1972)
-dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
+# godfather = Film("The Godfather", "R", "Crime", 1972)
+# dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
 user1 = User("Joe", 1)
-# movie_hub.add_movie(starwars)
+movie_hub.add_movie(starwars)
 # user1.rate(starwars, 5)
 # movie_hub.display_movies()
 
 while True:
-    print("Welcome to MovieHub ! Log in.")
-    user_choice = input("1. user1 \n:")
-    if user_choice == 1:
-        active_user = user1
-
-    
-
     print("""Welcome to MovieHub! What would you like to do?
-    1. Add a movie
-    2. Remove a movie
-    3. Display movies
-    4. Rate a movie
-    5. Review a movie\n""")
+    1. Search for a movie
+    2. Display movies
+    3. Rate movie
+    4. Review movie\n""")
 
     menu_choice = int(input(": "))
     if menu_choice == 1:
-        movie_hub.add_movie(Film(input("Name? "), input("Age rating? "), input("Genre? "), input("Year? ")))
+        search = input("Search by name: ")
+        for i in range(len(movie_hub.films)):
+            try:
+                if movie_hub.films[i].name == search:
+                    movie_choice = movie_hub.films[i]
+                    print("Movie found and selected")
+            except ValueError:
+                print("Movie not found!")
+    
     elif menu_choice == 2:
         pass
-    elif menu_choice == 3:
-        movie_hub.display_movies()
-    elif menu_choice == 4:
-        pass
-    elif menu_choice == 5:
-        break
+    
 
+    
     continue
