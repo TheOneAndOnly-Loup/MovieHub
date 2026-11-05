@@ -1,1 +1,1 @@
-# MovieHub-mini-IMDB-clone-
+# MovieHub
