@@ -2,10 +2,14 @@ class Database:
     def __init__(self):
         self.films = []
         # add a list of users
+
+    # Movie management
     def add_movie(self, movie_obj):
         self.films.append(movie_obj)
     def remove_movie(self, movie_obj):
         self.films.remove(movie_obj)
+
+    # Display functions
     def display_movies(self):
         for i in range(len(self.films)):
             print(f"{i} {self.films[i]}\n")
@@ -13,15 +17,15 @@ class Database:
         highest_rated = max(self.films, key=lambda film: film.avg_rating)
         print(highest_rated.name)
 
+    # Search and filter function
     def search_movie(self):
         search = input("Search by name: ")
-        for i in range(len(self.films)):
+        for i in range(len(self.films)): # linear_search, put a more efficient one
             try:
                 if self.films[i].name == search:
                     print("Movie found")
             except ValueError:
                 print("Movie not found!")
-
     def filter_by_genre(self, genre):
         filtered_movies = [movie.name for movie in self.films if movie.genre.lower() == genre.lower()]
         for x in filtered_movies:
@@ -43,7 +47,6 @@ class Film:
     # for reviews and ratings: add a way to assign a rating/review to a specific user
     def add_review(self, text): 
         self.reviews.append(text)
-    
     def change_rating(self, value):
         self.sum += value
         self.ratings += 1
@@ -54,7 +57,11 @@ class User:
         self.name = name
         self.id = id
         self.reviews = []
-    def rate(self, movie_obj, value): # add user-review matching
+    def rate(self): # add user-review matching
+        movie_hub.display_movies()
+        index = int(input("Enter the movie index: "))
+        movie_obj = movie_hub.films[index]
+        value = int(input("Enter a rating between 1 and 10: "))
         movie_obj.change_rating(value)
     def review(self, movie_obj, text): # here as well
         self.reviews.append(text)
@@ -63,11 +70,15 @@ class User:
         for i in range(len(self.reviews)):
             print(f"{i}\n")
 
+# Initialising Database object
+movie_hub = Database() 
 
-movie_hub = Database()
+# Initialising movie objects
 starwars = Film("Star Wars: A New Hope", "PG", "Sci-Fi", 1977)
 godfather = Film("The Godfather", "R", "Crime", 1972)
 dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
+
+# Initialising user objects
 user1 = User("Joe", 1)
 user2 = User("Jane", 2)
 user3 = User("John", 3)
@@ -75,12 +86,12 @@ user4 = User("Jill", 4)
 user5 = User("Jack", 5)
 user6 = User("Jenny", 6)
 
+# Adding movies to movie_hub database
 movie_hub.add_movie(starwars)
 movie_hub.add_movie(godfather)
 movie_hub.add_movie(dark_knight)
 
-# user1.rate(starwars, 5)
-# movie_hub.display_movies()
+
 
 while True:
     print("""Welcome to MovieHub! What would you like to do?
@@ -89,25 +100,38 @@ while True:
     3. Display highest rated movie
     4. Rate a movie
     5. Review a movie
-    6. Filter by genre\n""")
+    6. Filter by genre
+    7. Exit\n""")
 
     menu_choice = int(input(": "))
+
     if menu_choice == 1:
+        print("---------------")
         movie_hub.search_movie()
     elif menu_choice == 2:
+        print("---------------")
         movie_hub.display_movies()
     elif menu_choice == 3:
+        print("---------------")
         movie_hub.display_highest_rated()
     elif menu_choice == 4:
-        user1.rate(starwars, int(input("Please enter a rating between 1 and 10: "))) # hardcoded starwars and user1, change later
+        print("---------------")
+        user1.rate() # hardcoded user1, change later
     elif menu_choice == 5:
+        print("---------------")
         pass
     elif menu_choice == 6:
-        print('Please select a genre: \n1. Action\n2. Comedy\n3. Drama\n4. Horror\n5. Sci-Fi\n6. Romance\n7. Thriller')
-        genre = input(": ") # instead of typing the name exactly, be able to put the number
-        movie_hub.filter_by_genre(genre)
+        print("---------------")
+        genre_list = []
+        for i in range(len(movie_hub.films)):
+            genre_list.append(movie_hub.films[i].genre)
+        genre_list = list(set(genre_list))
+        for i in range(len(genre_list)):
+            print(f"{i} {genre_list[i]}")
+        genre = input("\nPlease select a genre: ")
+        movie_hub.filter_by_genre(genre_list[int(genre)])
+    elif menu_choice == 7:
+        break
 
     print("-----------------------------------------------")
     
-
-    continue
