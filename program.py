@@ -13,11 +13,16 @@ class Database:
     def display_movies(self):
         for i in range(len(self.films)):
             print(f"{i} {self.films[i]}\n")
+
     def display_highest_rated(self):
         highest_rated = max(self.films, key=lambda film: film.avg_rating)
         print(highest_rated.name)
 
-    # Search and filter function
+    def display_reviews(self, user):
+        for x, y in user.reviews.items():
+            print(f"{x.name} - {y}\n")
+
+    # Search and filter functions
     def search_movie(self):
         search = input("Search by name: ")
         for i in range(len(self.films)): # linear_search, put a more efficient one
@@ -56,16 +61,34 @@ class User:
     def __init__(self, name, id):
         self.name = name
         self.id = id
-        self.reviews = []
+        self.reviews = {}
+
     def rate(self): # add user-review matching
         movie_hub.display_movies()
         index = int(input("Enter the movie index: "))
+
+        if index > len(movie_hub.films) - 1 or index < 0:
+            raise Exception("Invalid index")
         movie_obj = movie_hub.films[index]
+        
         value = int(input("Enter a rating between 1 and 10: "))
+        if value > 10 or value <= 0:
+            raise Exception("Invalid input")
         movie_obj.change_rating(value)
-    def review(self, movie_obj, text): # here as well
-        self.reviews.append(text)
+
+    def review(self): # here as well
+        movie_hub.display_movies()
+        index = int(input("Enter the movie index: "))
+
+        if index > len(movie_hub.films) - 1 or index < 0:
+            raise Exception("Invalid index")
+        movie_obj = movie_hub.films[index]
+
+        text = input("Write your review: \n")
+        self.reviews.update({movie_obj: text})
+
         movie_obj.add_review(text)
+
     def display_reviews(self):
         for i in range(len(self.reviews)):
             print(f"{i}\n")
@@ -100,27 +123,37 @@ while True:
     3. Display highest rated movie
     4. Rate a movie
     5. Review a movie
-    6. Filter by genre
-    7. Exit\n""")
+    6. View your reviews
+    7. Filter by genre
+    8. Exit\n""")
 
     menu_choice = int(input(": "))
 
     if menu_choice == 1:
         print("---------------")
         movie_hub.search_movie()
+        
     elif menu_choice == 2:
         print("---------------")
         movie_hub.display_movies()
+
     elif menu_choice == 3:
         print("---------------")
         movie_hub.display_highest_rated()
+
     elif menu_choice == 4:
         print("---------------")
         user1.rate() # hardcoded user1, change later
+
     elif menu_choice == 5:
         print("---------------")
-        pass
-    elif menu_choice == 6:
+        user1.review() # here as well
+
+    elif menu_choice == 6: # here as well
+        print("---------------")
+        movie_hub.display_reviews(user1)
+
+    elif menu_choice == 7:
         print("---------------")
         genre_list = []
         for i in range(len(movie_hub.films)):
@@ -130,8 +163,8 @@ while True:
             print(f"{i} {genre_list[i]}")
         genre = input("\nPlease select a genre: ")
         movie_hub.filter_by_genre(genre_list[int(genre)])
-    elif menu_choice == 7:
+
+    elif menu_choice == 8:
         break
 
     print("-----------------------------------------------")
-    
