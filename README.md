@@ -1,4 +1,4 @@
 # MovieHub
 
 Todo:
-- Add a user selection screen
+- Working with files (csv...)
