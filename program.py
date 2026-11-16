@@ -1,8 +1,27 @@
+import csv
+
+filename = "movies.csv"
+
 class Database:
     def __init__(self):
         self.films = []
         self.users = []
         self.number_of_users = 0
+        with open(filename, 'r') as csvfile:
+            csvreader = csv.reader(csvfile)
+            self.fields = next(csvreader)
+
+            for row in csvreader:
+                id = int(row[0])
+                title = row[1]
+                year = int(row[2])
+                genre = row[3]
+                avg_vote = row[4]
+                number_of_ratings = row[5]
+                sum_of_ratings = row[6]
+                reviews = row[7]
+
+                self.films.append(Film(id, title, genre, year))
 
     # Movie management
     def add_movie(self, movie_obj):
@@ -13,7 +32,7 @@ class Database:
     # Display functions
     def display_movies(self):
         for i in range(len(self.films)):
-            print(f"{i} {self.films[i]}\n")
+            print(f"{self.films[i]}\n")
 
     def display_highest_rated(self):
         highest_rated = max(self.films, key=lambda film: film.avg_rating)
@@ -36,6 +55,7 @@ class Database:
                     print("Movie found")
             except ValueError:
                 print("Movie not found!")
+
     def filter_by_genre(self, genre):
         filtered_movies = [movie.name for movie in self.films if movie.genre.lower() == genre.lower()]
         for x in filtered_movies:
@@ -48,10 +68,30 @@ class Database:
        self.number_of_users += 1
        self.users.append(new_user)
 
+    # File management
+    def update_file(self):
+        with open("movies_changed.csv", 'w', newline="") as csvfile:
+            csvwriter = csv.writer(csvfile)
+            
+            csvwriter.writerow(self.fields)
+
+            for film in self.films:
+                id = int(film.id)
+                title = film.name
+                year = int(film.year)
+                genre = film.genre
+                avg_vote = film.avg_rating
+                number_of_ratings = film.ratings
+                sum_of_ratings = film.sum
+                reviews = film.reviews
+
+                csvwriter.writerow([id, title, year, genre, avg_vote, number_of_ratings, sum_of_ratings, reviews])
+
 class Film:
-    def __init__(self, name, age_rating, genre, year):
+    def __init__(self, id, name, genre, year):
+        self.id = id
         self.name = name
-        self.age_rating = age_rating
+        # self.age_rating = age_rating
         self.genre = genre
         self.year = year
         self.reviews = [] # if no rating has been added, the movie will show 0/10... fix this later
@@ -59,15 +99,19 @@ class Film:
         self.sum=0
         self.avg_rating = 0 # review later
     def __str__(self):
-        return f"{self.name} ({self.year}) - {self.genre} - {self.age_rating} - {self.avg_rating}/10"
+        return f"{self.id}: {self.name} ({self.year}) - {self.genre} - {self.avg_rating}/10"
 
     # for reviews and ratings: add a way to assign a rating/review to a specific user
     def add_review(self, text): 
-        self.reviews.append(text)
+        self.reviews.append([selected_user.id, text])
+        movie_hub.update_file()
     def change_rating(self, value):
         self.sum += value
         self.ratings += 1
         self.avg_rating = round(self.sum / self.ratings, 2)  # average rating
+        movie_hub.update_file()
+
+        
 
 class User:
     def __init__(self, name, id):
@@ -87,6 +131,7 @@ class User:
         if value > 10 or value <= 0:
             raise Exception("Invalid input")
         movie_obj.change_rating(value)
+
 
     def review(self): # here as well
         movie_hub.display_movies()
@@ -109,9 +154,9 @@ class User:
 movie_hub = Database() 
 
 # Initialising movie objects
-starwars = Film("Star Wars: A New Hope", "PG", "Sci-Fi", 1977)
-godfather = Film("The Godfather", "R", "Crime", 1972)
-dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
+# starwars = Film("Star Wars: A New Hope", "PG", "Sci-Fi", 1977)
+# godfather = Film("The Godfather", "R", "Crime", 1972)
+# dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
 
 # Initialising user objects
 # user1 = User("Joe", 1)
@@ -122,9 +167,9 @@ dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
 # user6 = User("Jenny", 6)
 
 # Adding movies to movie_hub database
-movie_hub.add_movie(starwars)
-movie_hub.add_movie(godfather)
-movie_hub.add_movie(dark_knight)
+# movie_hub.add_movie(starwars)
+# movie_hub.add_movie(godfather)
+# movie_hub.add_movie(dark_knight)
 
 selected_user = None
 
