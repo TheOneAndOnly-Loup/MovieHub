@@ -16,12 +16,12 @@ class Database:
                 title = row[1]
                 year = int(row[2])
                 genre = row[3]
-                avg_vote = row[4]
-                number_of_ratings = row[5]
-                sum_of_ratings = row[6]
+                avg_vote = float(row[4])
+                number_of_ratings = int(row[5])
+                sum_of_ratings = int(row[6])
                 reviews = row[7]
 
-                self.films.append(Film(id, title, genre, year))
+                self.films.append(Film(id, title, genre, year, avg_vote, number_of_ratings, sum_of_ratings, reviews))
 
     # Movie management
     def add_movie(self, movie_obj):
@@ -70,7 +70,7 @@ class Database:
 
     # File management
     def update_file(self):
-        with open("movies_changed.csv", 'w', newline="") as csvfile:
+        with open(filename, 'w', newline="") as csvfile:
             csvwriter = csv.writer(csvfile)
             
             csvwriter.writerow(self.fields)
@@ -88,16 +88,16 @@ class Database:
                 csvwriter.writerow([id, title, year, genre, avg_vote, number_of_ratings, sum_of_ratings, reviews])
 
 class Film:
-    def __init__(self, id, name, genre, year):
+    def __init__(self, id, name, genre, year, avg_rating, number_of_ratings, sum_of_ratings, reviews):
         self.id = id
         self.name = name
         # self.age_rating = age_rating
         self.genre = genre
         self.year = year
-        self.reviews = [] # if no rating has been added, the movie will show 0/10... fix this later
-        self.ratings = 0
-        self.sum=0
-        self.avg_rating = 0 # review later
+        self.reviews = reviews 
+        self.ratings = number_of_ratings
+        self.sum = sum_of_ratings
+        self.avg_rating = avg_rating # review later
     def __str__(self):
         return f"{self.id}: {self.name} ({self.year}) - {self.genre} - {self.avg_rating}/10"
 
