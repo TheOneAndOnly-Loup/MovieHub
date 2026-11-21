@@ -1,182 +1,258 @@
 import csv
+import ast
 
-filename = "movies.csv"
+MOVIES_FILE = "movies.csv"
+LINE = "-----------------------------------------------"
+SHORT_LINE = "---------------"
 
-class Database:
-    def __init__(self):
-        self.films = []
-        self.users = []
-        self.number_of_users = 0
-        with open(filename, 'r') as csvfile:
-            csvreader = csv.reader(csvfile)
-            self.fields = next(csvreader)
 
-            for row in csvreader:
-                id = int(row[0])
-                title = row[1]
-                year = int(row[2])
-                genre = row[3]
-                avg_vote = float(row[4])
-                number_of_ratings = int(row[5])
-                sum_of_ratings = int(row[6])
-                reviews = row[7]
-
-                self.films.append(Film(id, title, genre, year, avg_vote, number_of_ratings, sum_of_ratings, reviews))
-
-    # Movie management
-    def add_movie(self, movie_obj):
-        self.films.append(movie_obj)
-    def remove_movie(self, movie_obj):
-        self.films.remove(movie_obj)
-
-    # Display functions
-    def display_movies(self):
-        for i in range(len(self.films)):
-            print(f"{self.films[i]}\n")
-
-    def display_highest_rated(self):
-        highest_rated = max(self.films, key=lambda film: film.avg_rating)
-        print(highest_rated.name)
-
-    def display_reviews(self, user):
-        for x, y in user.reviews.items():
-            print(f"{x.name} - {y}\n")
-
-    def display_users(self):
-        for x in range(len(self.users)):
-            print(f"ID:{self.users[x].id} {self.users[x].name}")
-
-    # Search and filter functions
-    def search_movie(self):
-        search = input("Search by name: ")
-        for i in range(len(self.films)): # linear_search, put a more efficient one
-            try:
-                if self.films[i].name == search:
-                    print("Movie found")
-            except ValueError:
-                print("Movie not found!")
-
-    def filter_by_genre(self, genre):
-        filtered_movies = [movie.name for movie in self.films if movie.genre.lower() == genre.lower()]
-        for x in filtered_movies:
-            print(f"{x}\n")
-
-    # User management
-    def sign_up(self, username):
-       new_user = User(username, self.number_of_users)
-
-       self.number_of_users += 1
-       self.users.append(new_user)
-
-    # File management
-    def update_file(self):
-        with open(filename, 'w', newline="") as csvfile:
-            csvwriter = csv.writer(csvfile)
-            
-            csvwriter.writerow(self.fields)
-
-            for film in self.films:
-                id = int(film.id)
-                title = film.name
-                year = int(film.year)
-                genre = film.genre
-                avg_vote = film.avg_rating
-                number_of_ratings = film.ratings
-                sum_of_ratings = film.sum
-                reviews = film.reviews
-
-                csvwriter.writerow([id, title, year, genre, avg_vote, number_of_ratings, sum_of_ratings, reviews])
-
-class Film:
-    def __init__(self, id, name, genre, year, avg_rating, number_of_ratings, sum_of_ratings, reviews):
+# ---------------------------------------------------------------
+# Movie: holds the information about one film
+# ---------------------------------------------------------------
+class Movie:
+    def __init__(self, id, title, year, genre, avg_rating, number_of_ratings, sum_of_ratings, reviews):
         self.id = id
-        self.name = name
-        # self.age_rating = age_rating
-        self.genre = genre
+        self.title = title
         self.year = year
-        self.reviews = reviews 
-        self.ratings = number_of_ratings
-        self.sum = sum_of_ratings
-        self.avg_rating = avg_rating # review later
+        self.genre = genre
+        self.avg_rating = avg_rating
+        self.number_of_ratings = number_of_ratings
+        self.sum_of_ratings = sum_of_ratings
+        self.reviews = reviews  # a list of [user_id, review_text]
+
     def __str__(self):
-        return f"{self.id}: {self.name} ({self.year}) - {self.genre} - {self.avg_rating}/10"
+        return f"{self.id}: {self.title} ({self.year}) - {self.genre} - {self.avg_rating}/10"
 
-    # for reviews and ratings: add a way to assign a rating/review to a specific user
-    def add_review(self, text): 
-        self.reviews.append([selected_user.id, text])
-        movie_hub.update_file()
-    def change_rating(self, value):
-        self.sum += value
-        self.ratings += 1
-        self.avg_rating = round(self.sum / self.ratings, 2)  # average rating
-        movie_hub.update_file()
+    def add_rating(self, value):
+        self.sum_of_ratings += value
+        self.number_of_ratings += 1
+        self.avg_rating = round(self.sum_of_ratings / self.number_of_ratings, 2)
 
-        
+    def add_review(self, user_id, text):
+        self.reviews.append([user_id, text])
 
+
+# ---------------------------------------------------------------
+# User: someone who can rate and review movies
+# ---------------------------------------------------------------
 class User:
-    def __init__(self, name, id):
-        self.name = name
+    def __init__(self, id, name):
         self.id = id
-        self.reviews = {}
-
-    def rate(self): # add user-review matching
-        movie_hub.display_movies()
-        index = int(input("Enter the movie index: "))
-
-        if index > len(movie_hub.films) - 1 or index < 0:
-            raise Exception("Invalid index")
-        movie_obj = movie_hub.films[index]
-        
-        value = int(input("Enter a rating between 1 and 10: "))
-        if value > 10 or value <= 0:
-            raise Exception("Invalid input")
-        movie_obj.change_rating(value)
+        self.name = name
+        self.reviews = {}  # movie title -> review text
 
 
-    def review(self): # here as well
-        movie_hub.display_movies()
-        index = int(input("Enter the movie index: "))
+# ---------------------------------------------------------------
+# MovieHub: stores all the movies and users
+# ---------------------------------------------------------------
+class MovieHub:
+    def __init__(self):
+        self.movies = []
+        self.users = []
+        self.load_movies()
 
-        if index > len(movie_hub.films) - 1 or index < 0:
-            raise Exception("Invalid index")
-        movie_obj = movie_hub.films[index]
+    # --- Saving and loading -----------------------------------
 
-        text = input("Write your review: \n")
-        self.reviews.update({movie_obj: text})
+    def load_movies(self):
+        with open(MOVIES_FILE, "r") as file:
+            reader = csv.reader(file)
+            self.headers = next(reader)  # the first line holds the column names
 
-        movie_obj.add_review(text)
+            for row in reader:
+                movie = Movie(
+                    id=int(row[0]),
+                    title=row[1],
+                    year=int(row[2]),
+                    genre=row[3],
+                    avg_rating=float(row[4]),
+                    number_of_ratings=int(row[5]),
+                    sum_of_ratings=int(row[6]),
+                    # The reviews are saved as text like "[[0, 'great']]".
+                    # literal_eval turns that text back into a real list.
+                    reviews=ast.literal_eval(row[7]),
+                )
+                self.movies.append(movie)
 
-    def display_reviews(self):
-        for i in range(len(self.reviews)):
-            print(f"{i}\n")
+    def save_movies(self):
+        with open(MOVIES_FILE, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(self.headers)
 
-# Initialising Database object
-movie_hub = Database() 
+            for movie in self.movies:
+                writer.writerow([
+                    movie.id,
+                    movie.title,
+                    movie.year,
+                    movie.genre,
+                    movie.avg_rating,
+                    movie.number_of_ratings,
+                    movie.sum_of_ratings,
+                    movie.reviews,
+                ])
 
-# Initialising movie objects
-# starwars = Film("Star Wars: A New Hope", "PG", "Sci-Fi", 1977)
-# godfather = Film("The Godfather", "R", "Crime", 1972)
-# dark_knight = Film("The Dark Knight", "PG-13", "Action", 2008)
+    # --- Finding things ---------------------------------------
 
-# Initialising user objects
-# user1 = User("Joe", 1)
-# user2 = User("Jane", 2)
-# user3 = User("John", 3)
-# user4 = User("Jill", 4)
-# user5 = User("Jack", 5)
-# user6 = User("Jenny", 6)
+    def find_movie_by_id(self, movie_id):
+        for movie in self.movies:
+            if movie.id == movie_id:
+                return movie
+        return None
 
-# Adding movies to movie_hub database
-# movie_hub.add_movie(starwars)
-# movie_hub.add_movie(godfather)
-# movie_hub.add_movie(dark_knight)
+    def find_movies_by_title(self, text):
+        found = []
+        for movie in self.movies:
+            if text.lower() in movie.title.lower():
+                found.append(movie)
+        return found
 
-selected_user = None
+    def find_movies_by_genre(self, genre):
+        found = []
+        for movie in self.movies:
+            if movie.genre.lower() == genre.lower():
+                found.append(movie)
+        return found
 
-print("-----------------------------------------------")        
+    def find_user_by_id(self, user_id):
+        for user in self.users:
+            if user.id == user_id:
+                return user
+        return None
 
-while True:
-    print("""Welcome to MovieHub! What would you like to do?
+    def get_all_genres(self):
+        genres = []
+        for movie in self.movies:
+            if movie.genre not in genres:
+                genres.append(movie.genre)
+        return sorted(genres)
+
+    def get_highest_rated(self):
+        return max(self.movies, key=lambda movie: movie.avg_rating)
+
+    # --- Users ------------------------------------------------
+
+    def sign_up(self, name):
+        new_id = len(self.users)
+        new_user = User(new_id, name)
+        self.users.append(new_user)
+        return new_user
+
+
+# ---------------------------------------------------------------
+# Small helpers for reading what the user types
+# ---------------------------------------------------------------
+def ask_for_number(question):
+    """Keep asking until the user types a whole number."""
+    while True:
+        answer = input(question)
+        if answer.isdigit():
+            return int(answer)
+        print("Please type a number.")
+
+
+def print_movies(movies):
+    if len(movies) == 0:
+        print("No movies found.")
+    for movie in movies:
+        print(movie)
+
+
+def ask_for_movie(hub):
+    """Show every movie and let the user pick one by its ID."""
+    print_movies(hub.movies)
+    movie_id = ask_for_number("\nEnter the movie ID: ")
+    movie = hub.find_movie_by_id(movie_id)
+    if movie is None:
+        print("There is no movie with that ID.")
+    return movie
+
+
+# ---------------------------------------------------------------
+# One function per menu option
+# ---------------------------------------------------------------
+def sign_up(hub):
+    name = input("Choose a username: ")
+    user = hub.sign_up(name)
+    print(f"Welcome {user.name}! Your user ID is {user.id}.")
+
+
+def log_in(hub):
+    if len(hub.users) == 0:
+        print("Nobody has signed up yet.")
+        return None
+
+    for user in hub.users:
+        print(f"ID: {user.id}  {user.name}")
+
+    user_id = ask_for_number("Please enter your user ID: ")
+    user = hub.find_user_by_id(user_id)
+    if user is None:
+        print("There is no user with that ID.")
+    else:
+        print(f"Logged in as {user.name}.")
+    return user
+
+
+def search_movie(hub):
+    text = input("Search by title: ")
+    print_movies(hub.find_movies_by_title(text))
+
+
+def show_highest_rated(hub):
+    movie = hub.get_highest_rated()
+    print(f"Highest rated movie: {movie}")
+
+
+def rate_movie(hub, user):
+    movie = ask_for_movie(hub)
+    if movie is None:
+        return
+
+    rating = ask_for_number("Enter a rating between 1 and 10: ")
+    if rating < 1 or rating > 10:
+        print("The rating must be between 1 and 10.")
+        return
+
+    movie.add_rating(rating)
+    hub.save_movies()
+    print(f"Thanks! {movie.title} now has an average of {movie.avg_rating}/10.")
+
+
+def review_movie(hub, user):
+    movie = ask_for_movie(hub)
+    if movie is None:
+        return
+
+    text = input("Write your review:\n")
+    movie.add_review(user.id, text)
+    user.reviews[movie.title] = text
+    hub.save_movies()
+    print("Your review has been saved.")
+
+
+def show_my_reviews(user):
+    if len(user.reviews) == 0:
+        print("You haven't written any reviews yet.")
+    for title, text in user.reviews.items():
+        print(f"{title} - {text}\n")
+
+
+def filter_by_genre(hub):
+    genres = hub.get_all_genres()
+    for number, genre in enumerate(genres):
+        print(f"{number}. {genre}")
+
+    choice = ask_for_number("\nPlease select a genre: ")
+    if choice >= len(genres):
+        print("That is not one of the genres.")
+        return
+
+    print_movies(hub.find_movies_by_genre(genres[choice]))
+
+
+# ---------------------------------------------------------------
+# Main program
+# ---------------------------------------------------------------
+MENU = """Welcome to MovieHub! What would you like to do?
     1. Sign up
     2. Log in
     3. Search for a movie
@@ -186,73 +262,55 @@ while True:
     7. Review a movie
     8. View your reviews
     9. Filter by genre
-    10. Exit\n""")
+    10. Exit
+"""
 
-    menu_choice = int(input(": "))
 
-    if menu_choice == 1:
-        print("---------------")
-        movie_hub.sign_up(input("Choose a username: "))
+def main():
+    hub = MovieHub()
+    current_user = None  # nobody is logged in at the start
 
-    elif menu_choice == 2:
-        print("---------------")
-        movie_hub.display_users()
-        user_id = int(input("Please enter user ID: "))
+    print(LINE)
+    while True:
+        print(MENU)
+        choice = ask_for_number(": ")
+        print(SHORT_LINE)
 
-        selected_user = movie_hub.users[user_id] # throws an index out of range error if user_id doesnt correspond to a user
-
-    elif menu_choice == 3:
-        print("---------------")
-        movie_hub.search_movie()
-        
-    elif menu_choice == 4:
-        print("---------------")
-        movie_hub.display_movies()
-
-    elif menu_choice == 5:
-        print("---------------")
-        movie_hub.display_highest_rated()
-
-    elif menu_choice == 6:
-        print("---------------")
-
-        if selected_user is None:
+        # Options 6, 7 and 8 need someone to be logged in
+        if choice in [6, 7, 8] and current_user is None:
             print("Please log in first.")
+            print(LINE)
+            continue
 
-        selected_user.rate()
+        if choice == 1:
+            sign_up(hub)
+        elif choice == 2:
+            user = log_in(hub)
+            if user is not None:
+                current_user = user
+        elif choice == 3:
+            search_movie(hub)
+        elif choice == 4:
+            print_movies(hub.movies)
+        elif choice == 5:
+            show_highest_rated(hub)
+        elif choice == 6:
+            rate_movie(hub, current_user)
+        elif choice == 7:
+            review_movie(hub, current_user)
+        elif choice == 8:
+            show_my_reviews(current_user)
+        elif choice == 9:
+            filter_by_genre(hub)
+        elif choice == 10:
+            print("Goodbye!")
+            break
+        else:
+            print("Please choose a number from 1 to 10.")
 
-    elif menu_choice == 7:
-        print("---------------")
+        print(LINE)
 
-        if selected_user is None:
-            print("Please log in first.")
 
-        selected_user.review()
-
-    elif menu_choice == 8:
-        print("---------------")
-
-        if selected_user is None:
-            print("Please log in first.")
-
-        movie_hub.display_reviews(selected_user)
-
-    elif menu_choice == 9:
-        print("---------------")
-        genre_list = []
-
-        for i in range(len(movie_hub.films)):
-            genre_list.append(movie_hub.films[i].genre)
-
-        genre_list = list(set(genre_list))
-
-        for i in range(len(genre_list)):
-            print(f"{i} {genre_list[i]}")
-
-        genre = input("\nPlease select a genre: ")
-        movie_hub.filter_by_genre(genre_list[int(genre)])
-
-    elif menu_choice == 10:
-        break
-
-    print("-----------------------------------------------")
+# Only start the menu when this file is run directly
+if __name__ == "__main__":
+    main()
